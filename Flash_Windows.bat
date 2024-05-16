@@ -33,11 +33,13 @@ echo Are you sure you want to flash this rom? THIS WILL WIPE YOUR DATA
 echo Press enter to continue
 pause >nul
 resources\platform-tools\fastboot.exe --set-active=other || @echo "Changing slots error" && pause >nul
-resources\platform-tools\fastboot.exe %* flash boot %~dp0resources\images\boot.img || @echo "Flash boot error" && pause >nul
-resources\platform-tools\fastboot.exe %* flash dtbo %~dp0resources\images\dtbo.img || @echo "Flash dtbo error" && pause >nul
-resources\platform-tools\fastboot.exe %* flash vbmeta %~dp0resources\images\vbmeta.img || @echo "Flash vbmeta error" && pause >nul
-resources\platform-tools\fastboot.exe %* flash system %~dp0resources\images\system.img || @echo "Flash system error" && pause >nul
-resources\platform-tools\fastboot.exe %* flash vendor %~dp0resources\images\vendor.img || @echo "Flash vendor error" && pause >nul
+resources\platform-tools\fastboot.exe getvar current-slot | findstr /C:":a" >nul && set "suffix=_a"
+resources\platform-tools\fastboot.exe getvar current-slot | findstr /C:":b" >nul && set "suffix=_b"
+resources\platform-tools\fastboot.exe %* flash boot%suffix% %~dp0resources\images\boot.img || @echo "Flash boot error" && pause >nul
+resources\platform-tools\fastboot.exe %* flash dtbo%suffix% %~dp0resources\images\dtbo.img || @echo "Flash dtbo error" && pause >nul
+resources\platform-tools\fastboot.exe %* flash vbmeta%suffix% %~dp0resources\images\vbmeta.img || @echo "Flash vbmeta error" && pause >nul
+resources\platform-tools\fastboot.exe %* flash system%suffix% %~dp0resources\images\system.img || @echo "Flash system error" && pause >nul
+resources\platform-tools\fastboot.exe %* flash vendor%suffix% %~dp0resources\images\vendor.img || @echo "Flash vendor error" && pause >nul
 resources\platform-tools\fastboot.exe %* flash userdata %~dp0resources\images\userdata.img || @echo "Flash userdata error" && pause >nul
 echo Press any key to reboot your device.
 pause >nul
@@ -51,11 +53,13 @@ echo Are you sure you want to flash this rom?
 echo Press enter to continue
 pause >nul
 resources\platform-tools\fastboot.exe --set-active=other || @echo "Changing slots error" && pause >nul
-resources\platform-tools\fastboot.exe %* flash boot %~dp0resources\images\boot.img || @echo "Flash boot error" && pause >nul
-resources\platform-tools\fastboot.exe %* flash dtbo %~dp0resources\images\dtbo.img || @echo "Flash dtbo error" && pause >nul
-resources\platform-tools\fastboot.exe %* flash vbmeta %~dp0resources\images\vbmeta.img || @echo "Flash vbmeta error" && pause >nul
-resources\platform-tools\fastboot.exe %* flash system %~dp0resources\images\system.img || @echo "Flash system error" && pause >nul
-resources\platform-tools\fastboot.exe %* flash vendor %~dp0resources\images\vendor.img || @echo "Flash vendor error" && pause >nul
+resources\platform-tools\fastboot.exe getvar current-slot | findstr /C:":a" >nul && set "suffix=_a"
+resources\platform-tools\fastboot.exe getvar current-slot | findstr /C:":b" >nul && set "suffix=_b"
+resources\platform-tools\fastboot.exe %* flash boot%suffix% %~dp0resources\images\boot.img || @echo "Flash boot error" && pause >nul
+resources\platform-tools\fastboot.exe %* flash dtbo%suffix% %~dp0resources\images\dtbo.img || @echo "Flash dtbo error" && pause >nul
+resources\platform-tools\fastboot.exe %* flash vbmeta%suffix% %~dp0resources\images\vbmeta.img || @echo "Flash vbmeta error" && pause >nul
+resources\platform-tools\fastboot.exe %* flash system%suffix% %~dp0resources\images\system.img || @echo "Flash system error" && pause >nul
+resources\platform-tools\fastboot.exe %* flash vendor%suffix% %~dp0resources\images\vendor.img || @echo "Flash vendor error" && pause >nul
 echo Press any key to reboot your device.
 pause >nul
 resources\platform-tools\fastboot.exe %* reboot || @echo "Reboot error" && pause >nul
