@@ -43,8 +43,8 @@ fastboot_flash() {
 echo -e "### Fastboot flasher v1.0 ###"
 echo -e "-----------------------------"
 echo "Choose flash option:"
-echo "1. Dirty flash"
-echo "2. Clean flash"
+echo "1. Clean flash"
+echo "2. Dirty flash"
 echo "3. Exit"
 
 read -p "Enter your option (1-3): " flash_option
@@ -52,12 +52,12 @@ echo -e "--------------------------"
 
 case "$flash_option" in
     1)
-        clean_flash="false"
-        flash_msg=""
-        ;;
-    2)
         clean_flash="true"
         flash_msg=" THIS WILL WIPE YOUR DATA!!!"
+        ;;
+    2)
+        clean_flash="false"
+        flash_msg=""
         ;;
     3)
         echo "Exiting script..."
