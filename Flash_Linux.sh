@@ -1,54 +1,92 @@
 #!/bin/bash
 
-HEIGHT=15
-WIDTH=40
-CHOICE_HEIGHT=3
-BACKTITLE="Fastboot ROM Flasher"
-TITLE="Welcome to the fastboot ROM Flasher"
-MENU="Choose one of the following options:"
+# Fastboot flash scripts by Eazy Black @ https://github.com/EAZYBLACK 
+# and Juleast @ https://github.com/juleast
 
-OPTIONS=(1 "Clean Flash"
-         2 "Dirty flash")
+ded() {
+    status=$1
+    msg=$2
+    if [ "$status" -ne 0 ]; then
+        echo -e "\n$msg"
+        read -n1 -s -r -p "Press any key to exit..."
+        exit 1
+    fi
+}
 
-CHOICE=$(dialog --clear \
-                --backtitle "$BACKTITLE" \
-                --title "$TITLE" \
-                --menu "$MENU" \
-                $HEIGHT $WIDTH $CHOICE_HEIGHT \
-                "${OPTIONS[@]}" \
-                2>&1 >/dev/tty)
+fastboot_flash() {
+    echo -e "### Starting fastboot flash ###"
+    echo -e "-------------------------------"
+    fastboot $* --set-active=other
+    ded $? "Error changing slots. Check cable."
 
-clear
-case $CHOICE in
-        1)
-            export FLASHCLEAN=true
-            export CLEANMSG="THIS WILL ERASE YOUR DATA"
-            ;;
-        2)
-            export FLASHCLEAN=false
-            export CLEANMSG=""
-            ;;
+    IFS=" " read -r -a slot_lines <<< $(fastboot $* getvar current-slot 2>&1 | grep "slot: ")
+    ded $? "Error changing slots. Check cable and try again."
+    current_slot=${slot_lines[1]}
+
+    for part in ${part_list[@]}; do
+        if [ "$part" == "userdata" ]; then
+            fastboot $* flash ${part} `dirname $PWD`/resources/images/${part}.img
+        else
+            fastboot $* flash "${part}_${current_slot}" `dirname $PWD`/resources/images/${part}.img
+        fi
+        ded $? "Error flashing ${part}. Check cable and try again."
+        echo ""
+    done
+
+    read -n1 -s -r -p "Press any key to continue rebooting..."
+    echo ""
+    fastboot $* reboot
+    ded $? "Failed to reboot. Check cable and reboot manually if necessary."
+    return 0
+}
+
+echo -e "### Fastboot flasher v1.0 ###"
+echo -e "-----------------------------"
+echo "Choose flash option:"
+echo "1. Dirty flash"
+echo "2. Clean flash"
+echo "3. Exit"
+
+read -p "Enter your option (1-3): " flash_option
+echo -e "--------------------------"
+
+case "$flash_option" in
+    1)
+        clean_flash="false"
+        flash_msg=""
+        ;;
+    2)
+        clean_flash="true"
+        flash_msg=" THIS WILL WIPE YOUR DATA!!!"
+        ;;
+    3)
+        echo "Exiting script..."
+        exit 0
+        ;;
+    *)
+        echo "Illegal option!"
+        echo "Exiting script..."
+        exit 1
+        ;;
 esac
+
+part_list=("boot" "dtbo" "system" "vbmeta" "vendor")
+
+if $clean_flash; then
+    part_list+=("userdata")
+fi
+
 fastboot $* getvar product 2>&1 | grep "^product: *sdm845"
-if [ $? -ne 0  ] ; then echo "Wrong device plugged in, re-run script."; read -n1 -r -p "Press any key to exit..." key; exit 1; fi
-echo Are you sure you want to flash this rom? $CLEANMSG
-read -n1 -r -p "Press any key to continue..." key
-fastboot $* --set-active=other
-if [ $? -ne 0 ] ; then echo "Changing slots error"; read -n1 -r -p "Press any key to exit..." key; exit 1; fi
-fastboot $* flash boot `dirname $0`/resources/images/boot.img
-if [ $? -ne 0 ] ; then echo "Flash boot error"; read -n1 -r -p "Press any key to exit..." key; exit 1; fi
-fastboot $* flash dtbo `dirname $0`/resources/images/dtbo.img
-if [ $? -ne 0 ] ; then echo "Flash dtbo error"; read -n1 -r -p "Press any key to exit..." key; exit 1; fi
-fastboot $* flash vbmeta `dirname $0`/resources/images/vbmeta.img
-if [ $? -ne 0 ] ; then echo "Flash vbmeta error"; read -n1 -r -p "Press any key to exit..." key; exit 1; fi
-fastboot $* flash system `dirname $0`/resources/images/system.img
-if [ $? -ne 0 ] ; then echo "Flash system error"; read -n1 -r -p "Press any key to exit..." key; exit 1; fi
-fastboot $* flash vendor `dirname $0`/resources/images/vendor.img
-if [ $? -ne 0 ] ; then echo "Flash vendor error"; read -n1 -r -p "Press any key to exit..." key; exit 1; fi
-[[ $FLASHCLEAN == "true" ]] && fastboot $* flash userdata `dirname $0`/resources/images/userdata.img
-[[ $FLASHCLEAN == "true" ]] && if [ $? -ne 0 ] ; then echo "Flash userdata error"; read -n1 -r -p "Press any key to exit..." key; exit 1; fi
-read -n1 -r -p "Press any key to reboot..." key
-fastboot $* reboot
-if [ $? -ne 0 ] ; then echo "Reboot error"; read -n1 -r -p "Press any key to exit..." key; exit 1; fi
+ded $? "Wrong device. Replug device and try again."
 
-
+echo ""
+read -r -p "Continue?${flash_msg} (y/n): " confirm
+case "$confirm" in
+    [yY][eE][sS]|[yY])
+        echo ""
+        fastboot_flash
+        ;;
+    *)
+        ded 1 "Aborting script..."
+        ;;
+esac
